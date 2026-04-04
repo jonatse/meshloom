@@ -19,6 +19,7 @@ class AppContext:
     data_dir: Path
     sync_dir: Path
     config: Dict[str, Any] = field(default_factory=dict)
+    db_manager: Any = None
 
 
 class App(ABC):
@@ -37,11 +38,12 @@ class App(ABC):
         state: Current app state
     """
     
-    def __init__(self, metadata: AppMetadata) -> None:
+    def __init__(self, metadata: AppMetadata, db=None) -> None:
         self._metadata = metadata
         self._state = AppState.INSTALLED
         self._context: Optional[AppContext] = None
         self._db_path: Optional[Path] = None
+        self._db_manager = db
     
     @property
     def metadata(self) -> AppMetadata:
@@ -83,6 +85,15 @@ class App(ABC):
             with self.db() as conn:
                 conn.execute("INSERT INTO notes VALUES (?, ?)", (id, content))
         """
+        if self._db_manager:
+            conn = self._db_manager._get_sqlite_connection()
+            try:
+                yield conn
+                conn.commit()
+            finally:
+                conn.close()
+            return
+        
         if not self._db_path:
             raise RuntimeError("App not initialized")
         
@@ -96,6 +107,18 @@ class App(ABC):
     
     def _init_db(self, schema: str) -> None:
         """Initialize app database."""
+        if self._db_manager:
+            with self._db_manager.get_connection() as conn:
+                if self._db_manager.backend == "mariadb":
+                    with conn.cursor() as cursor:
+                        for statement in schema.split(";"):
+                            statement = statement.strip()
+                            if statement:
+                                cursor.execute(statement)
+                else:
+                    conn.executescript(schema)
+            return
+        
         if not self._context:
             raise RuntimeError("App context not set")
         

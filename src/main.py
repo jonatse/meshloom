@@ -24,6 +24,7 @@ from src.core.events import EventBus, Event
 from src.services.network import NetworkService
 from src.services.sync.engine import SyncEngine
 from src.services.container.manager import ContainerManager
+from src.services.db import DatabaseManager
 from src.apps.registry import AppRegistry, get_registry
 from src.apps.base import AppContext
 from src.bridges.manager import BridgeManager
@@ -238,6 +239,14 @@ class Meshloom:
         """Register and initialize apps."""
         self._diag.info("core", "Registering apps")
         
+        db_config = {
+            "data_dir": os.path.expanduser(self._config.get("storage.data_dir", "~/.meshloom/data")),
+            "run_dir": os.path.expanduser(self._config.get("storage.run_dir", "~/.meshloom/run")),
+            "backend": self._config.get("database.backend", "sqlite"),
+        }
+        self._db_manager = DatabaseManager(db_config)
+        self._db_manager.initialize()
+        
         self._app_registry = get_registry()
         
         apps_dir = Path(__file__).parent / "apps"
@@ -253,9 +262,11 @@ class Meshloom:
             data_dir=data_dir,
             sync_dir=sync_dir,
             config=self._config.data,
+            db_manager=self._db_manager,
         )
         
         self._app_registry.set_app_context(app_context)
+        self._app_registry.set_db_manager(self._db_manager)
         
         self._load_builtin_apps()
         

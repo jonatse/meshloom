@@ -38,6 +38,7 @@ class AppRegistry:
         self._entries: Dict[str, AppEntry] = {}
         self._app_dir = app_dir
         self._app_context: Optional[AppContext] = None
+        self._db_manager = None
     
     @property
     def entries(self) -> Dict[str, AppEntry]:
@@ -57,6 +58,12 @@ class AppRegistry:
     def set_app_context(self, context: AppContext) -> None:
         """Set context for all apps."""
         self._app_context = context
+    
+    def set_db_manager(self, db_manager) -> None:
+        """Set database manager for all apps."""
+        self._db_manager = db_manager
+        if self._app_context:
+            self._app_context.db_manager = db_manager
     
     def register(
         self,
@@ -182,7 +189,7 @@ class AppRegistry:
             return False
         
         try:
-            app = entry.app_class(entry.metadata)
+            app = entry.app_class(entry.metadata, self._db_manager)
             
             if self._app_context:
                 app._set_context(self._app_context)

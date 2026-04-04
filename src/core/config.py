@@ -43,6 +43,18 @@ class Config:
             "data_dir": "~/.meshloom/storage",
             "cache_dir": "~/.meshloom/cache",
         },
+        "db": {
+            "backend": "sqlite",
+            "host": "localhost",
+            "port": 3306,
+            "user": "meshloom",
+            "password": "",
+            "socket": "~/.meshloom/run/mariadb.sock",
+            "database": "meshloom",
+            "data_dir": "~/.meshloom/data",
+            "run_dir": "~/.meshloom/run",
+            "pool_size": 5,
+        },
     }
     
     def __init__(self, config_path: Optional[str] = None) -> None:

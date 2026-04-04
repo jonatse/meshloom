@@ -61,8 +61,8 @@ class Tasks(App):
     CREATE INDEX IF NOT EXISTS idx_reminders_time ON reminders(remind_at);
     """
     
-    def __init__(self, metadata: AppMetadata) -> None:
-        super().__init__(metadata)
+    def __init__(self, metadata: AppMetadata, db=None) -> None:
+        super().__init__(metadata, db)
         self._init_db(self.DEFAULT_SCHEMA)
     
     def on_install(self) -> bool:

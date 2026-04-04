@@ -37,8 +37,8 @@ class Notes(App):
     CREATE INDEX IF NOT EXISTS idx_notes_pinned ON notes(pinned);
     """
     
-    def __init__(self, metadata: AppMetadata) -> None:
-        super().__init__(metadata)
+    def __init__(self, metadata: AppMetadata, db=None) -> None:
+        super().__init__(metadata, db)
         self._init_db(self.DEFAULT_SCHEMA)
     
     def on_install(self) -> bool:
