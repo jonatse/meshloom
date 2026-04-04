@@ -44,7 +44,7 @@ class Config:
             "cache_dir": "~/.meshloom/cache",
         },
         "db": {
-            "backend": "sqlite",
+            "backend": "mariadb",
             "host": "localhost",
             "port": 3306,
             "user": "meshloom",
