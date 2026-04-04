@@ -84,7 +84,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation.
 |-----------|------------|
 | Sync | pycrdt (Yjs) |
 | Networking | Reticulum (RNS) |
-| Database | SQLite |
+| Database | MariaDB |
 | AI | Ollama |
 | Identity | Ed25519 |
 

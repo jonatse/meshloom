@@ -1,14 +1,11 @@
 """Base App class for Meshloom apps."""
 
-import os
-import sqlite3
 from abc import ABC, abstractmethod
-from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Generator
+from typing import Any, Dict, Generator, Optional
 
-from .metadata import AppMetadata, AppState, AppDependency
+from .metadata import AppMetadata, AppState
 
 
 @dataclass
@@ -73,65 +70,35 @@ class App(ABC):
         """Get app context."""
         return self._context
     
-    @contextmanager
-    def db(self) -> Generator[sqlite3.Connection, None, None]:
+    @property
+    def db(self) -> Generator[Any, None, None]:
         """
         Get database connection for app data.
         
         Yields:
-            SQLite connection
+            MariaDB connection (pymysql connection)
             
         Example:
-            with self.db() as conn:
-                conn.execute("INSERT INTO notes VALUES (?, ?)", (id, content))
+            with self.db as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("SELECT * FROM table")
         """
-        if self._db_manager:
-            conn = self._db_manager._get_sqlite_connection()
-            try:
-                yield conn
-                conn.commit()
-            finally:
-                conn.close()
-            return
+        if not self._context or not self._context.db_manager:
+            raise RuntimeError("App not initialized with database")
         
-        if not self._db_path:
-            raise RuntimeError("App not initialized")
-        
-        conn = sqlite3.connect(str(self._db_path))
-        conn.row_factory = sqlite3.Row
-        try:
-            yield conn
-            conn.commit()
-        finally:
-            conn.close()
+        return self._context.db_manager.get_connection()
     
     def _init_db(self, schema: str) -> None:
         """Initialize app database."""
-        if self._db_manager:
-            with self._db_manager.get_connection() as conn:
-                if self._db_manager.backend == "mariadb":
-                    with conn.cursor() as cursor:
-                        for statement in schema.split(";"):
-                            statement = statement.strip()
-                            if statement:
-                                cursor.execute(statement)
-                else:
-                    conn.executescript(schema)
-            return
-        
-        if not self._context:
+        if not self._context or not self._context.db_manager:
             raise RuntimeError("App context not set")
         
-        self._db_path = self._context.data_dir / f"{self.app_id}.db"
-        
-        os.makedirs(self._context.data_dir, exist_ok=True)
-        
-        if not self._db_path.exists():
-            conn = sqlite3.connect(str(self._db_path))
-            try:
-                conn.executescript(schema)
-            finally:
-                conn.close()
+        with self._context.db_manager.get_connection() as conn:
+            with conn.cursor() as cursor:
+                for statement in schema.split(";"):
+                    statement = statement.strip()
+                    if statement:
+                        cursor.execute(statement)
     
     def on_install(self) -> bool:
         """

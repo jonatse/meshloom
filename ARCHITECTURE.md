@@ -192,7 +192,7 @@ Meshloom provides the services layer while RNS handles the networking layer.
 |-----------|------------|
 | Sync | pycrdt (Yjs) - Offline-first, conflict-free |
 | Networking | Reticulum - DNS-free, encrypted, mesh-native |
-| Database | SQLite - Reliable, local, embedded |
+| Database | MariaDB - Reliable, local, embedded |
 | AI | Ollama - Local, GPU-accelerated |
 | UI | React + TypeScript |
 | Identity | Ed25519 - Reticulum-native |

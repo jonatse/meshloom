@@ -242,7 +242,7 @@ class Meshloom:
         db_config = {
             "data_dir": os.path.expanduser(self._config.get("storage.data_dir", "~/.meshloom/data")),
             "run_dir": os.path.expanduser(self._config.get("storage.run_dir", "~/.meshloom/run")),
-            "backend": self._config.get("database.backend", "sqlite"),
+            "backend": self._config.get("database.backend", "mariadb"),
         }
         self._db_manager = DatabaseManager(db_config)
         self._db_manager.initialize()
