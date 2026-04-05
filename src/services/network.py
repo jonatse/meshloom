@@ -11,9 +11,14 @@ Uses RNS (Reticulum Network Stack) for peer-to-peer networking:
 import json
 import os
 import socket
+import sys
 import threading
 import time
 from typing import Any, Callable, Dict, List, Optional
+
+vendor_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'vendor', 'python')
+if os.path.exists(vendor_dir) and vendor_dir not in sys.path:
+    sys.path.insert(0, vendor_dir)
 
 import RNS
 from RNS.Destination import Destination

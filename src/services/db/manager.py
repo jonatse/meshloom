@@ -2,12 +2,17 @@
 
 import os
 import subprocess
+import sys
 import time
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from threading import Lock, Thread
 from typing import Any, Dict, Generator, List, Optional
+
+vendor_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'vendor', 'python')
+if os.path.exists(vendor_dir) and vendor_dir not in sys.path:
+    sys.path.insert(0, vendor_dir)
 
 try:
     import pymysql
