@@ -16,6 +16,12 @@ try:
 except ImportError:
     PYMYSQL_AVAILABLE = False
 
+from .embedded import (
+    get_bundled_mariadb_paths,
+    initialize_mariadb_data,
+    start_bundled_mariadb,
+    check_system_mariadb,
+)
 from .models import App, Device, Edge, Node, SyncLog
 from .schema import INITIAL_SCHEMA
 
@@ -80,50 +86,75 @@ class DatabaseManager:
                 mariadb_data = self._data_dir / "mariadb"
                 mariadb_data.mkdir(exist_ok=True)
                 
-                init_cmd = [
-                    "mariadb-install-db",
-                    f"--datadir={mariadb_data}",
-                    f"--socket={self._socket}",
-                    "--auth-root=socket",
-                ]
-                try:
-                    subprocess.run(init_cmd, check=True, capture_output=True, timeout=30)
-                except FileNotFoundError:
+                bundled_mariadbd, bundled_install_db = get_bundled_mariadb_paths()
+                
+                if bundled_mariadbd and bundled_install_db:
+                    data_initialized = False
+                    initialized_marker = mariadb_data / ".initialized"
+                    
+                    if not initialized_marker.exists():
+                        if initialize_mariadb_data(bundled_install_db, mariadb_data, self._socket):
+                            initialized_marker.touch()
+                            data_initialized = True
+                        else:
+                            pass
+                    else:
+                        data_initialized = True
+                    
+                    if data_initialized:
+                        proc = start_bundled_mariadb(
+                            bundled_mariadbd.parent.parent,
+                            mariadb_data,
+                            self._socket,
+                            self._port,
+                        )
+                        if proc:
+                            self._mariadb_process = proc
+                else:
                     init_cmd = [
-                        "mysql_install_db",
+                        "mariadb-install-db",
                         f"--datadir={mariadb_data}",
                         f"--socket={self._socket}",
+                        "--auth-root=socket",
                     ]
-                    subprocess.run(init_cmd, check=True, capture_output=True, timeout=30)
-                except subprocess.CalledProcessError:
-                    pass
-                
-                server_cmd = [
-                    "mariadbd",
-                    f"--datadir={mariadb_data}",
-                    f"--socket={self._socket}",
-                    f"--port={self._port}",
-                    "--skip-networking=0",
-                    "--bind-address=127.0.0.1",
-                ]
-                try:
-                    self._mariadb_process = subprocess.Popen(
-                        server_cmd,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                    )
-                except FileNotFoundError:
+                    try:
+                        subprocess.run(init_cmd, check=True, capture_output=True, timeout=30)
+                    except FileNotFoundError:
+                        init_cmd = [
+                            "mysql_install_db",
+                            f"--datadir={mariadb_data}",
+                            f"--socket={self._socket}",
+                        ]
+                        subprocess.run(init_cmd, check=True, capture_output=True, timeout=30)
+                    except subprocess.CalledProcessError:
+                        pass
+                    
                     server_cmd = [
-                        "mysqld",
+                        "mariadbd",
                         f"--datadir={mariadb_data}",
                         f"--socket={self._socket}",
                         f"--port={self._port}",
+                        "--skip-networking=0",
+                        "--bind-address=127.0.0.1",
                     ]
-                    self._mariadb_process = subprocess.Popen(
-                        server_cmd,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                    )
+                    try:
+                        self._mariadb_process = subprocess.Popen(
+                            server_cmd,
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                        )
+                    except FileNotFoundError:
+                        server_cmd = [
+                            "mysqld",
+                            f"--datadir={mariadb_data}",
+                            f"--socket={self._socket}",
+                            f"--port={self._port}",
+                        ]
+                        self._mariadb_process = subprocess.Popen(
+                            server_cmd,
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                        )
                 
                 for _ in range(30):
                     try:
