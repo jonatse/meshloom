@@ -1032,8 +1032,12 @@ class RNode():
         global squashvw;
         try:
             if self.eeprom[ROM.ADDR_INFO_LOCK] == ROM.INFO_LOCK_BYTE:
-                from cryptography.hazmat.primitives import hashes
-                from cryptography.hazmat.backends import default_backend
+                try:
+                    from cryptography.hazmat.primitives import hashes
+                    from cryptography.hazmat.backends import default_backend
+                except ImportError:
+                    hashes = None
+                    default_backend = None
 
                 self.provisioned = True
 
@@ -1074,10 +1078,16 @@ class RNode():
                 else:
                     RNS.log("EEPROM checksum correct")
 
+                    try:
                     from cryptography.hazmat.primitives import serialization
                     from cryptography.hazmat.primitives.serialization import load_der_public_key
                     from cryptography.hazmat.primitives.serialization import load_der_private_key
                     from cryptography.hazmat.primitives.asymmetric import padding
+                except ImportError:
+                    serialization = None
+                    load_der_public_key = None
+                    load_der_private_key = None
+                    padding = None
 
                     # Try loading local signing key for 
                     # validation of self-signed devices
@@ -1586,6 +1596,7 @@ def main():
             upd_nocheck = True
             
         if args.public or args.key or args.flash or args.rom or args.autoinstall or args.trust_key:
+            try:
             from cryptography.hazmat.primitives import hashes
             from cryptography.hazmat.backends import default_backend
             from cryptography.hazmat.primitives import serialization
@@ -1593,6 +1604,14 @@ def main():
             from cryptography.hazmat.primitives.serialization import load_der_private_key
             from cryptography.hazmat.primitives.asymmetric import rsa
             from cryptography.hazmat.primitives.asymmetric import padding
+        except ImportError:
+            hashes = None
+            default_backend = None
+            serialization = None
+            load_der_public_key = None
+            load_der_private_key = None
+            rsa = None
+            padding = None
 
         clear = lambda: os.system('clear')
 
@@ -4147,8 +4166,12 @@ def main():
 
                     if serialno > 0 and model != None and hwrev != None:
                         try:
+                            try:
                             from cryptography.hazmat.primitives import hashes
                             from cryptography.hazmat.backends import default_backend
+                        except ImportError:
+                            hashes = None
+                            default_backend = None
 
                             timestamp = int(time.time())
                             time_bytes = struct.pack(">I", timestamp)

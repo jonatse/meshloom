@@ -71,6 +71,9 @@ def platform_checks():
             RNS.panic()
 
 def cryptography_old_api():
-    import cryptography
-    if cryptography.__version__ == "2.8": return True
-    else: return False
+    try:
+        import cryptography
+        if cryptography.__version__ == "2.8": return True
+        else: return False
+    except ImportError:
+        return False

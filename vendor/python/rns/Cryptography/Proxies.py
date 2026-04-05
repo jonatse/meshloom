@@ -28,12 +28,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
-from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
-
-# These proxy classes exist to create a uniform API accross
-# cryptography primitive providers.
+from .X25519 import X25519PrivateKey as X25519PrivateKeyInternal, X25519PublicKey as X25519PublicKeyInternal
+from .Ed25519 import Ed25519PrivateKey as Ed25519PrivateKeyInternal, Ed25519PublicKey as Ed25519PublicKeyInternal
 
 class X25519PrivateKeyProxy:
     def __init__(self, real):
@@ -41,24 +37,23 @@ class X25519PrivateKeyProxy:
 
     @classmethod
     def generate(cls):
-        return cls(X25519PrivateKey.generate())
+        return cls(X25519PrivateKeyInternal.generate())
 
     @classmethod
     def from_private_bytes(cls, data):
-        return cls(X25519PrivateKey.from_private_bytes(data))
+        return cls(X25519PrivateKeyInternal.from_private_bytes(data))
 
     def private_bytes(self):
-        return self.real.private_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PrivateFormat.Raw,
-            encryption_algorithm=serialization.NoEncryption(),
-        )
+        return self.real.private_bytes()
 
     def public_key(self):
         return X25519PublicKeyProxy(self.real.public_key())
 
     def exchange(self, peer_public_key):
-        return self.real.exchange(peer_public_key.real)
+        if isinstance(peer_public_key, X25519PublicKeyProxy):
+            return self.real.exchange(peer_public_key.real)
+        else:
+            return self.real.exchange(peer_public_key)
 
 
 class X25519PublicKeyProxy:
@@ -67,13 +62,10 @@ class X25519PublicKeyProxy:
 
     @classmethod
     def from_public_bytes(cls, data):
-        return cls(X25519PublicKey.from_public_bytes(data))
+        return cls(X25519PublicKeyInternal.from_public_bytes(data))
 
     def public_bytes(self):
-        return self.real.public_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PublicFormat.Raw
-        )
+        return self.real.public_bytes()
 
 
 class Ed25519PrivateKeyProxy:
@@ -82,18 +74,14 @@ class Ed25519PrivateKeyProxy:
 
     @classmethod
     def generate(cls):
-        return cls(Ed25519PrivateKey.generate())
+        return cls(Ed25519PrivateKeyInternal.generate())
 
     @classmethod
     def from_private_bytes(cls, data):
-        return cls(Ed25519PrivateKey.from_private_bytes(data))
+        return cls(Ed25519PrivateKeyInternal.from_private_bytes(data))
 
     def private_bytes(self):
-        return self.real.private_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PrivateFormat.Raw,
-            encryption_algorithm=serialization.NoEncryption()
-        )
+        return self.real.private_bytes()
 
     def public_key(self):
         return Ed25519PublicKeyProxy(self.real.public_key())
@@ -108,13 +96,10 @@ class Ed25519PublicKeyProxy:
 
     @classmethod
     def from_public_bytes(cls, data):
-        return cls(Ed25519PublicKey.from_public_bytes(data))
+        return cls(Ed25519PublicKeyInternal.from_public_bytes(data))
 
     def public_bytes(self):
-        return self.real.public_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PublicFormat.Raw
-        )
+        return self.real.public_bytes()
 
     def verify(self, signature, message):
         self.real.verify(signature, message)
